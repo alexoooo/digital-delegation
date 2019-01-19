@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--========================================================================-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <!--====================================================================-->
+    <modelVersion>4.0.0</modelVersion>
+
+
+    <!--====================================================================-->
+    <parent>
+        <groupId>ao.common</groupId>
+        <artifactId>ao-parent</artifactId>
+        <version>6</version>
+    </parent>
+
+
+    <!--====================================================================-->
+    <groupId>ao.dd</groupId>
+    <artifactId>dd</artifactId>
+    <version>2.5.2-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    
+
+    <!--====================================================================-->
+    <name>Digital Delegation</name>
+    <url>http://code.google.com/p/digital-delegation</url>
+    <inceptionYear>2008</inceptionYear>
+
+
+    <!--====================================================================-->
+    <developers>
+        <developer>
+            <name>Yivgeni (Eugene) Malikov</name>
+            <email>y.malikov@gmail.com</email>
+        </developer>
+    </developers>
+
+
+    <!--====================================================================-->
+    <modules>
+		<module>dd-web</module>
+		<module>dd-shell</module>
+		<module>dd-office</module>
+		<module>dd-desktop</module>
+        <module>dd-commons</module>
+    </modules>
+
+
+    <!--====================================================================-->
+    <scm>
+        <developerConnection>
+            scm:svn:https://digital-delegation.googlecode.com/svn/proj/dd/trunk
+        </developerConnection>
+    </scm>
+
+
+    <!--====================================================================-->
+    <properties>
+        <svn.root>https://digital-delegation.googlecode.com/svn/proj/dd</svn.root>
+
+        <ao.util.version>2.4.2</ao.util.version>
+    </properties>
+
+
+    <!--====================================================================-->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>dd-commons</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>ao.util</groupId>
+                <artifactId>util-lang</artifactId>
+                <version>${ao.util.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ao.util</groupId>
+                <artifactId>util-serial</artifactId>
+                <version>${ao.util.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ao.util</groupId>
+                <artifactId>util-persist</artifactId>
+                <version>${ao.util.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ao.util</groupId>
+                <artifactId>util-serial-persist</artifactId>
+                <version>${ao.util.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ao.util</groupId>
+                <artifactId>util-parse</artifactId>
+                <version>${ao.util.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>joda-time</groupId>
+                <artifactId>joda-time</artifactId>
+                <version>1.6</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>r09</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    
+    <!--====================================================================-->
+    <dependencies>
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>5.14.1</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.14</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.0</version>
+            <optional>false</optional>
+        </dependency>
+    </dependencies>
+
+    
+    <!--====================================================================-->
+    <repositories>
+        <repository>
+            <id>ao-central</id>
+            <name>AO Specific Releases</name>
+            <url>https://raw.githubusercontent.com/alexoooo/ao-commons/master/lib-releases</url>
+        </repository>
+        <repository>
+            <id>ao-ext</id>
+            <name>AO External Releases</name>
+            <url>https://raw.githubusercontent.com/alexoooo/ao-commons/master/ext-releases</url>
+        </repository>
+    </repositories>
+
+</project>
