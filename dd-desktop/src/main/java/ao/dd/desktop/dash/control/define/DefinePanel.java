@@ -97,10 +97,10 @@ public class DefinePanel
                 model.setFeature(new FeatureDefinition());
             }});
 
-        final DefaultListModel<FeatureDefinition> existingFeatureListModel =
-                new DefaultListModel<FeatureDefinition>();
-        final JList<FeatureDefinition> existingFeatureList =
-                new JList<FeatureDefinition>( existingFeatureListModel );
+        final DefaultListModel/*<FeatureDefinition>*/ existingFeatureListModel =
+                new DefaultListModel/*<FeatureDefinition>*/();
+        final JList/*<FeatureDefinition>*/ existingFeatureList =
+                new JList/*<FeatureDefinition>*/( existingFeatureListModel );
 
         existingFeatureList.addListSelectionListener(
                 new ListSelectionListener() {
@@ -110,7 +110,7 @@ public class DefinePanel
                             return;
                         }
 
-                        model.setFeature(
+                        model.setFeature((FeatureDefinition)
                                 existingFeatureList.getSelectedValue());
                     }});
 

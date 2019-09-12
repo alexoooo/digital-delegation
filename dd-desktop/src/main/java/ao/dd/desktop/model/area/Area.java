@@ -1,6 +1,6 @@
 package ao.dd.desktop.model.area;
 
-import ao.dd.desktop.control.mouse.target.MouseTarget;
+import ao.dd.desktop.control.mouse.destination.MouseTarget;
 import ao.dd.desktop.model.display.Display;
 import ao.dd.desktop.model.image.RgbGrid;
 import ao.dd.desktop.model.pixel.Pixel;
