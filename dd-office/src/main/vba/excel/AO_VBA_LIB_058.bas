@@ -1,21 +1,19 @@
-Attribute VB_Name = "AO_VBA_LIB_057b"
+Attribute VB_Name = "AO_VBA_LIB_058"
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ''
-'' !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+'' https://github.com/alexoooo/digital-delegation
 ''
-''    WRITTEN BY: ALEX OSTROVKSY
-''     FOR QUESTIONS CALL 647-223-7245 OR EMAIL alex@ostrovsky.biz
-''
-'' !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-''
-
 
 Option Explicit
 Option Compare Text
 
+
+'-------------------------------------------------------------------------
 Private Const SEP_STR As String = "•"
 Public FileSearch As New CLRFileSearch
+Private workingDirSet As Boolean
+
 
 
 '---------------------------------------------------------------------
@@ -35,9 +33,6 @@ Function aoExtractRange( _
     Select Case TypeName(possibleRange)
         Case "Range"
             Set aoExtractRange = possibleRange
-        
-        Case "AO_Range"
-            Set aoExtractRange = possibleRange.r
         
         Case "Worksheet"
             Set aoExtractRange = possibleRange.UsedRange
@@ -995,6 +990,12 @@ Function aoLeftOf(ByVal what As Variant) As Range
     Set aoLeftOf = aoMultiAreaRelativeRange(what, Direction.LEFT_HAND)
 End Function
 
+
+Public Function aoOrLeftOf(r As Range) As Range
+    Set aoOrLeftOf = aoUnion(r, aoLeftOf(r))
+End Function
+
+
 Private Function aoLeftOf_(ByVal what As Range) As Range
     Dim topLeft As Range, bottomRight As Range, bounds As Range
     
@@ -1037,6 +1038,12 @@ End Function
 Function aoRightOf(ByVal what As Variant) As Range
     Set aoRightOf = aoMultiAreaRelativeRange(what, Direction.RIGHT_HAND)
 End Function
+
+
+Public Function aoOrRightOf(r As Range) As Range
+    Set aoOrRightOf = aoUnion(r, aoRightOf(r))
+End Function
+
 
 Private Function aoRightOf_(ByVal what As Range) As Range
     Dim topLeft As Range, bottomRight As Range, bounds As Range
@@ -1085,6 +1092,12 @@ Function aoAbove(ByVal what As Variant) As Range
     Set aoAbove = aoMultiAreaRelativeRange(what, Direction.UP)
 End Function
 
+
+Public Function aoOrAbove(r As Range) As Range
+    Set aoOrAbove = aoUnion(r, aoAbove(r))
+End Function
+
+
 Private Function aoAbove_(ByVal what As Range) As Range
     Dim topLeft As Range, bottomRight As Range, bounds As Range
     
@@ -1128,6 +1141,12 @@ End Function
 Function aoBelow(ByVal what As Variant) As Range
     Set aoBelow = aoMultiAreaRelativeRange(what, Direction.Down)
 End Function
+
+
+Public Function aoOrBelow(r As Range) As Range
+    Set aoOrBelow = aoUnion(r, aoBelow(r))
+End Function
+
 
 Private Function aoBelow_(ByVal what As Range) As Range
     Dim topLeft As Range, bottomRight As Range, bounds As Range
@@ -2351,7 +2370,7 @@ Private Function aoCachedStairVal( _
     End If
     
     If Len(val) = 0 Then
-        If cache.exists(minorIndexOfCell) Then
+        If cache.Exists(minorIndexOfCell) Then
             aoCachedStairVal = cache(minorIndexOfCell)
         Else
             aoCachedStairVal = vbNullString
@@ -2791,16 +2810,16 @@ End Function
 '   alpha-numeric name order
 Function aoSortSheets(wb As Workbook)
     Dim i As Long
-    Dim SheetNames() As String
-    ReDim SheetNames(wb.Sheets.Count - 1)
+    Dim sheetNames() As String
+    ReDim sheetNames(wb.Sheets.Count - 1)
 
-    For i = 0 To UBound(SheetNames)
-        SheetNames(i) = wb.Sheets(i + 1).name
+    For i = 0 To UBound(sheetNames)
+        sheetNames(i) = wb.Sheets(i + 1).name
     Next
-    SheetNames = aoSort(SheetNames)
+    sheetNames = aoSort(sheetNames)
     
-    For i = 0 To UBound(SheetNames)
-        aoSwapSheets wb.Sheets(i + 1), wb.Sheets(SheetNames(i))
+    For i = 0 To UBound(sheetNames)
+        aoSwapSheets wb.Sheets(i + 1), wb.Sheets(sheetNames(i))
     Next
 End Function
 
@@ -2812,8 +2831,9 @@ End Function
 Public Function aoMatch( _
         ByVal rangeA As Variant, ByVal rangeB As Variant, _
         Optional by As Orientation = Orientation.BY_ROW, _
-        Optional useStair As Boolean = False) As Collection
-    
+        Optional useStair As Boolean = False, _
+        Optional includeEmpty As Boolean = False _
+) As Collection
     Dim aSpans As Collection, bSpans As Collection
     Dim rA As Range, rb As Range
     Dim dictA As Object, dictB As Object
@@ -2861,7 +2881,7 @@ Public Function aoMatch( _
         Set dictB = aoDictOfRangeValueVsRange(bSpans)
     End If
     
-    Set aoMatch = aoValuesOfMatchingKeys(dictA, dictB)
+    Set aoMatch = aoValuesOfMatchingKeys(dictA, dictB, includeEmpty)
     aoClearStairValCache
 End Function
 
@@ -2878,15 +2898,28 @@ End Function
 
 
 Private Function aoValuesOfMatchingKeys( _
-        dictA As Object, dictB As Object) As Collection
-    
+        dictA As Object, _
+        dictB As Object, _
+        Optional includeEmpty As Boolean = False _
+) As Collection
     Dim keyA As Variant, matchingPairs As New Collection
     
     For Each keyA In dictA
-        If dictB.exists(keyA) Then
+        If dictB.Exists(keyA) Then
             matchingPairs.Add aoPair(dictA.Item(keyA), dictB.Item(keyA))
+        ElseIf includeEmpty Then
+            matchingPairs.Add aoPair(dictA.Item(keyA), Nothing)
         End If
     Next
+    
+    If includeEmpty Then
+        Dim keyB As Variant
+        For Each keyB In dictB
+            If Not dictA.Exists(keyB) Then
+                matchingPairs.Add aoPair(Nothing, dictB.Item(keyB))
+            End If
+        Next
+    End If
     
     Set aoValuesOfMatchingKeys = matchingPairs
 End Function
@@ -2895,8 +2928,8 @@ End Function
 Private Function aoDictOfRangeValueVsRange( _
         ranges As Collection, _
         Optional ByVal stairBounds As Variant, _
-        Optional isStairVertical As Boolean) As Object
-    
+        Optional isStairVertical As Boolean _
+) As Object
     Dim index As Long
     Dim rangeDict As Object
     Dim rangeValue As Variant
@@ -2911,6 +2944,11 @@ Private Function aoDictOfRangeValueVsRange( _
         If IsDate(rangeValue) Then
             rangeValue = Format(CDate(rangeValue), "yyyy-mm-dd")
         End If
+        
+'        If rangeDict.Exists(rangeValue) Then
+'            aoSelect rangeDict(rangeValue)
+'        End If
+'        aoSelect oneRange
         
         Set rangeDict(rangeValue) = _
                 aoUnion(rangeDict(rangeValue), oneRange)
@@ -3492,7 +3530,7 @@ Private Function aoMapTokenLblsToLblCells( _
                     label = Left(label, InStr(label, ":") - 1)
                 End If
                 
-                If Not (lblMap.exists(label)) Then
+                If Not (lblMap.Exists(label)) Then
                     Set foundLbls = aoFind(labelCells, label)
                     
                     ' specified label not found
@@ -3592,6 +3630,203 @@ Public Function aoMakeFormulasRelative( _
             aCell.Formula = Replace(aCell.Formula, "$", "")
         End If
     Next
+End Function
+
+
+
+'-------------------------------------------------------------------------
+Public Function aoSave( _
+        wb As Workbook, _
+        Optional fileWithOptionalPath As String)
+    On Error GoTo save_as
+    
+    wb.SaveAs fileWithOptionalPath
+    'wb.Save
+    Exit Function
+save_as:
+    wb.SaveAs fileWithOptionalPath
+End Function
+
+
+
+'-------------------------------------------------------------------------
+Function aoSheet( _
+        Optional ByVal inWorkbook As Workbook, _
+        Optional ByVal name_pattern_or_index As Variant = 1, _
+        Optional ByVal create_if_not_exists As Boolean = False _
+) As Worksheet
+    If IsMissing(inWorkbook) Then
+        Set inWorkbook = ActiveWorkbook
+    End If
+    
+    Dim name As String
+    name = CStr(name_pattern_or_index)
+    
+    Set aoSheet = aoSheetLike(inWorkbook, name)
+    If aoSheet Is Nothing Then
+        Dim index As Integer
+        index = CInt(aoCDbl(name))
+        
+        If index = 0 Then
+            If Trim(name) <> "0" Then
+                ' failed to match sheet by given name
+                
+                If create_if_not_exists Then
+                    Set aoSheet = _
+                        aoEmptyWorksheet(inWorkbook, name)
+                End If
+                Exit Function
+            End If
+            
+            index = 1
+            Debug.Print "WARNING: Changing 0 to 1 for failsafety"
+        End If
+        
+        ' -1 means last sheet, ala Perl:
+        While index < 1
+            index = index + inWorkbook.Sheets.Count + 1
+        Wend
+        
+        If index <= inWorkbook.Sheets.Count Then
+            Set aoSheet = inWorkbook.Sheets(index)
+        End If
+    End If
+    
+    If aoSheet Is Nothing And create_if_not_exists Then
+        Set aoSheet = _
+            aoEmptyWorksheet(inWorkbook, name)
+    End If
+End Function
+
+
+'-------------------------------------------------------------------------
+Public Function aoOpen( _
+        ByVal fileWithOptionalPath As String, _
+        Optional ByVal allowEdit As Boolean = True, _
+        Optional ByVal prompt As Boolean = True, _
+        Optional ByVal create As Boolean = False _
+) As Workbook
+    Dim fileName As String
+    If fileWithOptionalPath Like "*\*" Then
+        fileName = right(fileWithOptionalPath, _
+                            Len(fileWithOptionalPath) - _
+                              InStrRev(fileWithOptionalPath, "\"))
+    Else
+        fileName = fileWithOptionalPath
+    End If
+    
+    Dim dotLocation As Integer, filenameSansExtention As String
+    dotLocation = InStrRev(fileName, ".")
+    If dotLocation > 1 Then
+        filenameSansExtention = Left(fileName, dotLocation - 1)
+    End If
+    
+    Set aoOpen = aoScanOpenWorkbooks(fileName)
+    
+    If aoOpen Is Nothing Then
+        Set aoOpen = aoWorkbookLike( _
+                fileWithOptionalPath, allowEdit, False)
+    ElseIf fileName <> fileWithOptionalPath And _
+            fileWithOptionalPath <> _
+              (aoOpen.Path & "\" & fileName) Then
+        aoOpen.Close
+        Set aoOpen = aoOpen( _
+                fileWithOptionalPath, create, allowEdit, prompt)
+    End If
+    
+    If aoOpen Is Nothing Then
+        Set aoOpen = aoPrompt(fileWithOptionalPath, allowEdit)
+        
+        If aoOpen Is Nothing And create Then
+            Set aoOpen = aoNewWorkbook(1)
+            aoSave aoOpen, fileWithOptionalPath
+        End If
+    End If
+End Function
+
+Private Function aoPrompt( _
+        message As String, _
+        allowEdit As Boolean) As Workbook
+    
+    If Not workingDirSet Then
+        ChDir ActiveWorkbook.Path
+        workingDirSet = True
+    End If
+    
+    Dim fileName As Variant
+    fileName = Application.GetOpenFilename( _
+                    "excel file, *.xls*; *.csv", _
+                    Title:=message)
+    
+    If fileName = False Then
+        'MsgBox ("Please select a valid file.")
+    Else
+        Set aoPrompt = Workbooks.Open( _
+                fileName, ReadOnly:=(Not allowEdit))
+    End If
+End Function
+
+
+Private Function aoScanOpenWorkbooks(ByVal fileName As String) As Workbook
+    On Error GoTo return_nothing
+    
+    If InStr(1, fileName, ".") = 0 Then
+        Set aoScanOpenWorkbooks = aoDoScanOpenWorkbooks(fileName, "xls")
+        If Not (aoScanOpenWorkbooks Is Nothing) Then Exit Function
+        
+        Set aoScanOpenWorkbooks = aoDoScanOpenWorkbooks(fileName, "xlsx")
+        If Not (aoScanOpenWorkbooks Is Nothing) Then Exit Function
+        
+        Set aoScanOpenWorkbooks = aoDoScanOpenWorkbooks(fileName, "csv")
+        If Not (aoScanOpenWorkbooks Is Nothing) Then Exit Function
+        
+    Else
+        Set aoScanOpenWorkbooks = aoDoScanOpenWorkbooks(fileName)
+    End If
+    
+    If aoScanOpenWorkbooks Is Nothing Then
+        Set aoScanOpenWorkbooks = _
+                aoOpenedWbLike(fileName)
+    End If
+    
+    Exit Function
+return_nothing:
+    Set aoScanOpenWorkbooks = Nothing
+End Function
+
+Private Function aoDoScanOpenWorkbooks( _
+                 ByVal fileNameOrPattern As String, _
+        Optional ByVal extension As String = "") As Workbook
+    On Error GoTo return_nothing
+    
+    If extension = "" Then
+        Set aoDoScanOpenWorkbooks = _
+            Workbooks(fileNameOrPattern)
+    Else
+        Set aoDoScanOpenWorkbooks = _
+            Workbooks(fileNameOrPattern & "." & extension)
+    End If
+    
+    Exit Function
+return_nothing:
+    Set aoDoScanOpenWorkbooks = Nothing
+End Function
+
+Private Function aoDoScanOpenWorkbooksPattern( _
+        pattern As String) As Workbook
+    On Error GoTo return_nothing
+    
+    Dim wb As Workbook
+    For Each wb In Workbooks
+        If wb.name Like pattern Then
+            Set aoDoScanOpenWorkbooksPattern = wb
+            Exit Function
+        End If
+    Next
+    
+    Exit Function
+return_nothing:
+    Set aoDoScanOpenWorkbooksPattern = Nothing
 End Function
 
 

@@ -9,14 +9,7 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-''
-'' !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-''
-''    COPYRIGHT ALEX OSTROVSKY, UNLIMITED USE GRANTED TO ATI TECHNOLOGIES
-''     FOR QUESTIONS CALL 647-223-7245 OR EMAIL aostrovsky@tracemojo.com
-''
-'' !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-''
+
 
 Option Explicit
 
@@ -78,6 +71,7 @@ End Property
 Public Property Set b(ByVal bVal As Variant)
     Set valB = bVal
 End Property
+
 
 
 
