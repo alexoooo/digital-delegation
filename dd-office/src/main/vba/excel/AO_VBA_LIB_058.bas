@@ -354,13 +354,14 @@ Function aoFreezePanes(at As Range) As Boolean
     
     origSceenUpdateStatus = Application.ScreenUpdating
     Set origSelection = Selection
-    
-    ActiveWindow.WindowState = xlNormal
 
     Application.ScreenUpdating = True
     With at.Parent
         .Activate
 
+        If ActiveWindow.WindowState = xlMinimized Then
+            ActiveWindow.WindowState = xlNormal
+        End If
         ActiveWindow.FreezePanes = False
 
         .cells(1, 1).Select
