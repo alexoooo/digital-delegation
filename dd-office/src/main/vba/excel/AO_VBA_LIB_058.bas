@@ -355,15 +355,17 @@ Function aoFreezePanes(at As Range) As Boolean
     origSceenUpdateStatus = Application.ScreenUpdating
     Set origSelection = Selection
     
+    ActiveWindow.WindowState = xlNormal
+
     Application.ScreenUpdating = True
     With at.Parent
         .Activate
 
         ActiveWindow.FreezePanes = False
-        
+
         .cells(1, 1).Select
         at.Select
-        
+
         If Range(at.EntireColumn.cells(1, 1), _
                   at).Height > _
                     Application.UsableHeight * 0.8 Then
@@ -372,7 +374,7 @@ Function aoFreezePanes(at As Range) As Boolean
             aoFreezePanes = False
             Exit Function
         End If
-        
+
         ActiveWindow.FreezePanes = True
     End With
     Application.ScreenUpdating = origSceenUpdateStatus
@@ -383,15 +385,15 @@ End Function
 Function aoSelect(ByVal r As Variant)
     Dim origSceenUpdateStatus As Boolean
     Dim trueR As Range
-    
+
     If r Is Nothing Then
         Exit Function
     Else
         Set trueR = aoExtractRange(r)
     End If
-    
+
     'origSceenUpdateStatus = Application.ScreenUpdating
-    
+
     Application.ScreenUpdating = True
     If ActiveSheet.name <> trueR.Parent.name Or _
            ActiveSheet.Parent.name <> _
@@ -400,7 +402,7 @@ Function aoSelect(ByVal r As Variant)
     End If
     trueR.Select
     Application.ScreenUpdating = False
-    
+
     'If Application.ScreenUpdating <> origSceenUpdateStatus Then
     '    Application.ScreenUpdating = origSceenUpdateStatus
     'End If
@@ -430,7 +432,7 @@ Function aoSort( _
         ByRef list As Variant, _
         Optional asc As Boolean = True, _
         Optional comparator As String) As Variant
-    
+
     If IsArray(list) Then
         aoSort = aoMergeSort(list, asc, comparator)
     Else
@@ -448,21 +450,21 @@ End Function
 Function aoDates(aRange As Variant) As Range
     Dim lookIn As Range, aCell As Range, post_ As String, asDate As Date
     Dim extracted As Range, rb As New AO_RangeBag, val As String
-    
+
     Set extracted = aoExtractRange(aRange)
     If extracted Is Nothing Then
         Set aoDates = Nothing
         Exit Function
     End If
-    
+
     Set lookIn = Intersect(extracted, extracted.Worksheet.UsedRange)
-    
+
     For Each aCell In lookIn.cells 'aoFindAsIs(lookin, "*", False)
         If IsError(aCell.Value) Then
             GoTo next_cell
         End If
         val = aCell.Value
-        
+
         If Len(val) > 5 Then
             If IsDate(val) Then
                 If Not (val Like "##.###") Then
@@ -476,9 +478,9 @@ Function aoDates(aRange As Variant) As Range
                 ' maybe its a date range
 '                If TypeName(val) = "String" Then
                     If InStr(1, val, "_") > 0 Then
-                        
+
                         post_ = right$(val, Len(val) - InStr(1, val, "_"))
-                        
+
                         If IsDate(post_) Then
                             asDate = CDate(post_)
                             If Year(asDate) > 2000 And Year(asDate) < 2030 Then
@@ -493,10 +495,10 @@ Function aoDates(aRange As Variant) As Range
                 End If
 '            End If
         End If
-        
+
 next_cell:
     Next
-    
+
     Set aoDates = rb.sort
 End Function
 
@@ -529,21 +531,21 @@ End Function
 
 Function aoUnion(ParamArray ranges() As Variant) As Range
     Dim rb As New AO_RangeBag, oneRange As Variant
-    
+
     For Each oneRange In ranges
         rb.Add aoExtractRange(oneRange)
     Next
-    
+
     Set aoUnion = rb.sort
 End Function
 
 ' does not guarantee that the returned range's areas are in order
 Function aoUnionAsIs(ByVal rangeA As Variant, ByVal rangeB As Variant) As Range
     Dim extractedA As Range, extractedB As Range
-    
+
     Set extractedA = aoExtractRange(rangeA)
     Set extractedB = aoExtractRange(rangeB)
-    
+
     If Not ((extractedA Is Nothing) Or (extractedB Is Nothing)) Then
         Set aoUnionAsIs = Union(extractedA, extractedB)
     ElseIf Not (extractedA Is Nothing) Then
@@ -582,22 +584,22 @@ End Function
 
 Function aoIntersect(ParamArray ranges() As Variant) As Range
     Dim rb As New AO_RangeBag, oneRange As Variant
-    
+
     rb.setConjunctive False
-    
+
     For Each oneRange In ranges
         rb.Add oneRange
     Next
-    
+
     Set aoIntersect = rb.sort
 End Function
 
 Function aoIntersectAsIs(ByVal range1 As Variant, ByVal range2 As Variant) As Range
     Dim r1 As Range, r2 As Range
-    
+
     Set r1 = aoExtractRange(range1)
     Set r2 = aoExtractRange(range2)
-    
+
     If (r1 Is Nothing) Or (r2 Is Nothing) Then
         Exit Function
     Else
@@ -614,17 +616,17 @@ End Function
 
 Function aoSubtract(ByVal subtractFrom As Variant, ParamArray subtractWhat() As Variant) As Range
     Dim subFrom As Range, subWhat As New AO_RangeBag, subWhatItr As Variant
-    
+
     Set subFrom = aoExtractRange(subtractFrom)
-    
+
     If subFrom Is Nothing Then
         Exit Function
     End If
-    
+
     For Each subWhatItr In subtractWhat
         subWhat.Add subWhatItr
     Next
-    
+
     If subWhat.Flatten Is Nothing Then
         Set aoSubtract = subFrom
     Else
@@ -685,58 +687,58 @@ Private Function aoRowsOrCols( _
         ByVal r As Variant, _
         index As Long, _
         byRow As Boolean) As Variant
-    
+
     Dim aSpan As Range, stretchedSpans As Areas, anArea As Range
     Dim spanColl As Collection, rowsOrCols As Range, rangeToPartition As Range
-    
+
     Set rangeToPartition = aoExtractRange(r)
-    
+
     If rangeToPartition Is Nothing Then
         If index = 0 Then
             Set aoRowsOrCols = New Collection
         End If
-        
+
         Exit Function
     ElseIf rangeToPartition.Areas.Count = 1 Then
         Set rowsOrCols = aoGetRowsOrCols(rangeToPartition, byRow)
-        
+
         If index = 0 Then
             Set spanColl = New Collection
-            
+
             For Each anArea In rowsOrCols
                 spanColl.Add anArea
             Next
-            
+
             Set aoRowsOrCols = spanColl
         ElseIf index > 0 Then
             Set aoRowsOrCols = rowsOrCols(index)
         Else
             Set aoRowsOrCols = rowsOrCols(rowsOrCols.Count + index + 1)
         End If
-        
+
         Exit Function
     End If
-    
-    
+
+
     Set stretchedSpans = aoSortedEntireRowsOrCols(rangeToPartition, byRow)
-    
+
     If index = 0 Then
         Set spanColl = New Collection
-        
+
         For Each anArea In stretchedSpans
             For Each aSpan In aoGetRowsOrCols(anArea, byRow)
                 spanColl.Add aoSortAreas(Intersect(rangeToPartition, aSpan))
             Next
         Next
-        
+
         Set aoRowsOrCols = spanColl
         Exit Function
     Else
         Dim indexLeft As Long
         Dim loopIndex As Long, loopStart As Long, loopEnd As Long, loopStep As Long
-        
+
         indexLeft = index
-        
+
         If indexLeft > 0 Then
             loopStart = 1
             loopEnd = stretchedSpans.Count
@@ -746,11 +748,11 @@ Private Function aoRowsOrCols( _
             loopEnd = 1
             loopStep = -1
         End If
-        
+
         For loopIndex = loopStart To loopEnd Step loopStep
             Set anArea = stretchedSpans(loopIndex)
             Set rowsOrCols = aoGetRowsOrCols(anArea, byRow)
-            
+
             If indexLeft > 0 Then
                 If indexLeft <= rowsOrCols.Count Then
                     Set aoRowsOrCols = aoSortAreas(Intersect(rangeToPartition, rowsOrCols(indexLeft)))
@@ -820,16 +822,16 @@ Private Function aoWhitespaceRowsOrCols( _
         byRow As Boolean, _
         ByVal bounds As Variant, _
         Optional ByVal index As Long = 0) As Range
-    
+
     Dim lookIn As Range, whitespace As Range, stretchedWhitespace As Range
     Dim rowsOrCols As Areas, rowOrColArea As Range, rowOrCol As Range, spanningBag As New AO_RangeBag
     Dim whitespaceInRow As Range, curRowIndex As Long
-    
+
     Set lookIn = aoExtractRange(bounds)
     If lookIn Is Nothing Then
         Exit Function
     End If
-    
+
     Set whitespace = aoWhitespaceCells(lookIn)
     If whitespace Is Nothing Then
         Exit Function
@@ -840,28 +842,28 @@ Private Function aoWhitespaceRowsOrCols( _
                         whitespace, _
                         lookIn.Parent.UsedRange), _
                     byRow)
-        
+
         For Each rowOrColArea In rowsOrCols
             For Each rowOrCol In aoGetRowsOrCols(rowOrColArea, byRow)
                 Set whitespaceInRow = _
                         Intersect(lookIn, rowOrCol, whitespace)
-                
+
                 If Not (whitespaceInRow Is Nothing) Then
                     If whitespaceInRow.cells.Count = _
                             Intersect(rowOrCol, lookIn).cells.Count Then
                         curRowIndex = curRowIndex + 1
-                        
+
                         If curRowIndex = index Then
                             Set aoWhitespaceRowsOrCols = whitespaceInRow
                             Exit Function
                         End If
-                        
+
                         spanningBag.addRange whitespaceInRow
                     End If
                 End If
             Next
         Next
-        
+
         spanningBag.addRange _
                 aoGetRowsOrCols( _
                     aoIntersectAsIs( _
@@ -869,7 +871,7 @@ Private Function aoWhitespaceRowsOrCols( _
                         whitespace), _
                     byRow)
     End If
-    
+
     If index = 0 Then
         Set aoWhitespaceRowsOrCols = spanningBag.sort
     Else
@@ -882,7 +884,7 @@ Private Function aoWhitespaceCells(lookIn As Range)
     Dim spaceStarting As Range
     Dim whitespaceBag As New AO_RangeBag
     Dim spaceStartingCell As Range
-    
+
     Set spaceStarting = aoFindAsIs(lookIn, " *", False)
     If Not (spaceStarting Is Nothing) Then
         For Each spaceStartingCell In spaceStarting
@@ -895,15 +897,15 @@ Private Function aoWhitespaceCells(lookIn As Range)
             Intersect(aoCompliment_(lookIn.Parent.UsedRange), lookIn)
     whitespaceBag.addRange _
             aoSpecialCells(lookIn, xlCellTypeBlanks)
-    
+
     Set aoWhitespaceCells = whitespaceBag.Flatten
 End Function
 
 Private Function aoSpecialCells( _
         ByVal lookIn As Range, cellType As XlCellType) As Range
-    
+
     On Error GoTo none_found
-    
+
     Set aoSpecialCells = _
             aoIntersect(lookIn, _
                         lookIn.SpecialCells(cellType))
@@ -911,7 +913,7 @@ Private Function aoSpecialCells( _
 none_found:
     Set aoSpecialCells = Nothing
 End Function
-    
+
 
 
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -926,13 +928,13 @@ Private Function aoTrimWsEdge( _
         ws As Worksheet, _
         byRow As Boolean, _
         trimHead As Boolean)
-    
+
     Dim spans As Range, edgeSpan As Range, blankCells As Range
     Dim startIndex As Long, endIndex As Long, stepDir As Long, i As Long
-    
+
     With ws.UsedRange
         Set spans = aoGetRowsOrCols(.cells, byRow)
-        
+
         If trimHead Then
             stepDir = 1
             startIndex = 1
@@ -942,10 +944,10 @@ Private Function aoTrimWsEdge( _
             startIndex = spans.Count
             endIndex = 1
         End If
-        
+
         For i = startIndex To endIndex Step stepDir
             Set edgeSpan = spans.Item(i)
-            
+
             Set blankCells = aoWhitespaceCells(edgeSpan)
             If blankCells Is Nothing Then
                 Exit For
@@ -953,7 +955,7 @@ Private Function aoTrimWsEdge( _
                 Exit For
             End If
         Next
-        
+
         If i <> startIndex Then
             aoGetEntireRowsOrCols( _
                 Range( _
@@ -998,13 +1000,13 @@ End Function
 
 Private Function aoLeftOf_(ByVal what As Range) As Range
     Dim topLeft As Range, bottomRight As Range, bounds As Range
-    
+
     If what.Column = 1 Then
         Exit Function
     End If
-    
+
     Set bounds = what.Worksheet.cells
-    
+
     Set topLeft = bounds.cells(what.Row, 1)
     Set bottomRight = _
             bounds.cells( _
@@ -1047,14 +1049,14 @@ End Function
 
 Private Function aoRightOf_(ByVal what As Range) As Range
     Dim topLeft As Range, bottomRight As Range, bounds As Range
-    
+
     Set bounds = what.Worksheet.cells
-    
+
     If (what.Column + what.Columns.Count - 1) = _
             bounds.Columns.Count Then
         Exit Function
     End If
-    
+
     Set topLeft = _
         bounds.cells( _
             what.Row, _
@@ -1100,13 +1102,13 @@ End Function
 
 Private Function aoAbove_(ByVal what As Range) As Range
     Dim topLeft As Range, bottomRight As Range, bounds As Range
-    
+
     If what.Row = 1 Then
         Exit Function
     End If
-    
+
     Set bounds = what.Worksheet.cells
-    
+
     Set topLeft = bounds.cells(1, what.Column)
     Set bottomRight = _
             bounds.cells( _
@@ -1150,13 +1152,13 @@ End Function
 
 Private Function aoBelow_(ByVal what As Range) As Range
     Dim topLeft As Range, bottomRight As Range, bounds As Range
-    
+
     Set bounds = what.Worksheet.cells
-    
+
     If (what.Row + what.rows.Count - 1) = bounds.rows.Count Then
         Exit Function
     End If
-    
+
     Set topLeft = _
             bounds.cells( _
                 what.Row + what.rows.Count, _
@@ -1174,30 +1176,30 @@ End Function
 Private Function aoMultiAreaRelativeRange( _
         ByVal relativeTo As Variant, _
         relation As Direction) As Range
-    
+
     Dim r As Range
     Set r = aoExtractRange(relativeTo)
-    
+
     If r Is Nothing Then
         Exit Function
     ElseIf r.Areas.Count = 1 Then
         Set aoMultiAreaRelativeRange = aoRelativeRange(r, relation)
         Exit Function
     End If
-    
+
     Dim aSpan As Range, anArea As Range
     Dim findEdgeIn As Range, edge As Range, subArea As Range
     Dim comparisonGoal As Long, relationBag As New AO_RangeBag
     Dim byRow As Boolean, greaterEdge As Boolean
     Dim majorCorner As Corner
-    
+
     If relation = Direction.LEFT_HAND Or _
             relation = Direction.RIGHT_HAND Then
         byRow = True
     Else
         byRow = False
     End If
-    
+
     If relation = Direction.UP Or relation = Direction.LEFT_HAND Then
         comparisonGoal = 1
         majorCorner = Corner.TOP_LEFT
@@ -1205,37 +1207,37 @@ Private Function aoMultiAreaRelativeRange( _
         comparisonGoal = -1
         majorCorner = Corner.BOTTOM_RIGHT
     End If
-    
+
     For Each anArea In aoSortedEntireRowsOrCols(r, byRow)
         For Each aSpan In aoGetRowsOrCols(anArea, byRow)
-        
+
             Set findEdgeIn = Intersect(r, aSpan)
             Set edge = Nothing
-            
+
             For Each subArea In findEdgeIn
-                
+
                 If edge Is Nothing Then
                     Set edge = aoCornerOfRange(subArea, majorCorner)
-                    
+
                 ElseIf comparisonGoal = _
                         aoCompareRangePositions(subArea, edge) Then
-                    
+
                     Set edge = _
                         aoCornerOfRange(subArea, majorCorner)
                 End If
             Next
-            
+
             relationBag.addRange aoRelativeRange(edge, relation)
         Next
     Next
-    
+
     Set aoMultiAreaRelativeRange = relationBag.sort
 End Function
 
 Private Function aoRelativeRange( _
         r As Range, _
         relation As Direction) As Range
-    
+
     Select Case relation
         Case Direction.UP
             Set aoRelativeRange = aoAbove_(r)
@@ -1253,7 +1255,7 @@ End Function
 Private Function aoGetRowsOrCols( _
         r As Range, _
         returnRows As Boolean) As Range
-    
+
     If Not (r Is Nothing) Then
         If returnRows Then
             Set aoGetRowsOrCols = r.rows
@@ -1266,7 +1268,7 @@ End Function
 Private Function aoGetEntireRowsOrCols( _
         r As Range, _
         rows As Boolean) As Range
-    
+
     If rows Then
         Set aoGetEntireRowsOrCols = r.EntireRow
     Else
@@ -1276,21 +1278,21 @@ End Function
 
 Private Function aoSortedEntireRowsOrCols( _
         r As Range, byRow As Boolean) As Areas
-    
+
     Dim stretchedSpans As Range
     Dim sorted As Range
-    
+
     If r Is Nothing Then
         Exit Function
     End If
-    
+
     If byRow Then
         Set stretchedSpans = r.EntireRow
     Else
         Set stretchedSpans = r.EntireColumn
     End If
-    
-    
+
+
     Set sorted = aoSortAreas( _
                     Intersect( _
                         r.Parent.cells, _
@@ -1322,20 +1324,20 @@ End Function
 Function aoCompliment(ByVal what As Variant) As Range
     Dim rb As AO_RangeBag, oneArea As Range
     Set what = aoExtractRange(what)
-    
+
     If what Is Nothing Then
         ' should be = Everything, but that's impossible
         Set aoCompliment = Nothing
         Exit Function
     End If
-    
+
     Set rb = New AO_RangeBag
     rb.setConjunctive False
-    
+
     For Each oneArea In what.Areas
         rb.addRange aoCompliment_(oneArea)
     Next
-    
+
     Set aoCompliment = rb.sort
 End Function
 
@@ -1343,14 +1345,14 @@ Private Function aoCompliment_(what As Range) As Range
     If what Is Nothing Then
         Exit Function
     End If
-    
+
     Dim rb As New AO_RangeBag
-    
+
     rb.addRange aoAbove_(what.EntireRow)
     rb.addRange aoLeftOf_(what)
     rb.addRange aoRightOf_(what)
     rb.addRange aoBelow_(what.EntireRow)
-    
+
     Set aoCompliment_ = rb.Flatten
 End Function
 
@@ -1358,13 +1360,13 @@ End Function
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 Public Function aoRangeCell( _
         r As Range, cellNum As Long) As Range
-    
+
     Dim anArea As Range, cellsLeft As Long
-    
+
     cellsLeft = cellNum
     For Each anArea In r.Areas
         cellsLeft = cellsLeft - anArea.cells.Count
-        
+
         If cellsLeft <= 0 Then
             Set aoRangeCell = _
                     anArea.cells(anArea.cells.Count + cellsLeft)
@@ -1389,9 +1391,9 @@ Function aoFindRegex( _
         ByVal bounds As Variant, _
         pattern As String, _
         Optional ignoreCase As Boolean = True) As Range
-    
+
     Dim rb As New AO_RangeBag
-    
+
     Set bounds = aoExtractRange(bounds)
     If bounds Is Nothing Then
         Exit Function
@@ -1401,20 +1403,20 @@ Function aoFindRegex( _
             Exit Function
         End If
     End If
-    
+
     Dim regex As Object, toTest As Range
-    
+
     Set regex = CreateObject("vbscript.regexp")
     regex.pattern = pattern
     regex.ignoreCase = ignoreCase
-    
+
     If Not regex.Test("") Then
         Set bounds = aoFind(bounds, "*")
         If bounds Is Nothing Then
             Exit Function
         End If
     End If
-    
+
     For Each toTest In bounds.cells
         If Not IsError(toTest.Value) Then
             If regex.Test(toTest.Value) Then
@@ -1422,7 +1424,7 @@ Function aoFindRegex( _
             End If
         End If
     Next
-    
+
     Set aoFindRegex = rb.sort
 End Function
 
@@ -1430,10 +1432,10 @@ Private Function aoFindAsIs( _
         ByVal bounds As Variant, _
         ByVal findLike As String, _
         findExact As Boolean) As Range
-    
+
     Dim oneMatch As Range, firstAddress As String
     Dim rb As New AO_RangeBag, val As Variant
-    
+
     Set bounds = aoExtractRange(bounds)
     If bounds Is Nothing Then
         Exit Function
@@ -1443,29 +1445,29 @@ Private Function aoFindAsIs( _
             Exit Function
         End If
     End If
-    
+
     ' optimization
     If findLike = "" Then
         Set aoFindAsIs = aoSpecialCells(bounds, xlCellTypeBlanks)
         Exit Function
     End If
-    
+
     If findExact Then
         findLike = aoEscapePat(findLike)
     End If
-    
+
     If Strings.InStr(1, findLike, "[") > 0 Or _
             Strings.InStr(1, findLike, "#") > 0 Then
         Set aoFindAsIs = aoFindPatternUsingLoop(bounds, findLike)
         Exit Function
     End If
-    
+
     Set oneMatch = bounds.find(findLike, lookIn:=xlValues)
     If Not (oneMatch Is Nothing) Then
         firstAddress = oneMatch.Address
         Do
             val = oneMatch.Value
-            
+
             ' ugly because VB does not support short circuiting
             If Not IsError(oneMatch.Value) Then
                 If oneMatch.Value Like findLike Then
@@ -1476,7 +1478,7 @@ Private Function aoFindAsIs( _
             Else
                 'aoSelect oneMatch
             End If
-            
+
             Set oneMatch = bounds.FindNext(oneMatch)
             If (oneMatch Is Nothing) Then
                 Exit Do
@@ -1484,7 +1486,7 @@ Private Function aoFindAsIs( _
         Loop While (Not IsError(val)) And _
                     (oneMatch.Address <> firstAddress)
     End If
-    
+
     Set aoFindAsIs = rb.Flatten
 End Function
 
@@ -1493,32 +1495,32 @@ Function aoFind( _
         ByVal bounds As Variant, _
         ByVal findLike As String, _
         Optional findExact As Boolean = False) As Range
-    
+
     Dim r As Range
-    
+
     Set r = aoFindAsIs(bounds, findLike, findExact)
-    
+
     If Not (r Is Nothing) Then
         Set r = aoSortAreas(r)
     End If
-    
+
     Set aoFind = r
 End Function
 
 Private Function aoFindPatternUsingLoop( _
         ByVal bounds As Range, _
         lookFor As String) As Range
-    
+
     Dim oneCell As Range, firstAddress As String
     Dim rb As New AO_RangeBag
-    
+
     If Not ("" Like lookFor) Then
         Set bounds = aoFind(bounds, "*")
         If bounds Is Nothing Then
             Exit Function
         End If
     End If
-    
+
     For Each oneCell In bounds.cells
         If Not IsError(oneCell.Value) Then
             If Trim(oneCell.Value) Like lookFor Then
@@ -1526,7 +1528,7 @@ Private Function aoFindPatternUsingLoop( _
             End If
         End If
     Next
-    
+
     Set aoFindPatternUsingLoop = rb.sort
 End Function
 
@@ -1558,10 +1560,10 @@ End Function
 ''''''''' Ugly Internals of the corner finding code ''''''''''''''''
 Private Function aoCornerOfMultiAreaRange( _
         ByVal aRange As Variant, cornerIndex As Corner) As Range
-    
+
     Dim lookIn As Range
     Set lookIn = aoExtractRange(aRange)
-    
+
     If Not (lookIn Is Nothing) Then
         If lookIn.Areas.Count = 1 Then
             Set aoCornerOfMultiAreaRange = _
@@ -1584,18 +1586,18 @@ Private Function aoFindCornerClosestTo( _
         ByVal idealCorner As Range, _
         ByVal Choices As Range, _
         cornerIndex As Corner) As Range
-    
+
     Dim anArea As Range
     Dim bestCorner As Range, currentCorner As Range
     Dim distance As Long, leastDistance As Long
-    
+
     Set bestCorner = aoCornerOfRange(Choices.Areas(1), cornerIndex)
     leastDistance = aoCalcRangeDistance(idealCorner, bestCorner)
-    
+
     For Each anArea In Choices.Areas
         Set currentCorner = aoCornerOfRange(anArea, cornerIndex)
         distance = aoCalcRangeDistance(idealCorner, currentCorner)
-        
+
         If distance < leastDistance Or _
                 (distance = leastDistance And _
                     aoCloserToCorner( _
@@ -1607,7 +1609,7 @@ Private Function aoFindCornerClosestTo( _
             leastDistance = distance
         End If
     Next
-    
+
     Set aoFindCornerClosestTo = bestCorner
 End Function
 
@@ -1616,28 +1618,28 @@ End Function
 Private Function aoFindIdealCorner( _
         ByVal aRange As Range, _
         ByVal cornerIndex As Corner)
-    
+
     Dim anArea As Range, closestByRow As Range, closestByCol As Range
     Dim currentCorner As Range
-    
+
     Set currentCorner = aoCornerOfRange(aRange.Areas(1), cornerIndex)
     Set closestByRow = currentCorner
     Set closestByCol = currentCorner
-    
+
     For Each anArea In aRange.Areas
         Set currentCorner = aoCornerOfRange(anArea, cornerIndex)
-        
+
         If aoCloserToCorner(currentCorner, closestByRow, _
                                 cornerIndex, Orientation.BY_ROW) Then
             Set closestByRow = currentCorner
         End If
-        
+
         If aoCloserToCorner(currentCorner, closestByCol, _
                                 cornerIndex, Orientation.BY_COLUMN) Then
             Set closestByCol = currentCorner
         End If
     Next
-    
+
     Set aoFindIdealCorner = _
             aoIntersectAsIs( _
                 closestByCol.EntireColumn, _
@@ -1649,25 +1651,25 @@ End Function
 Private Function aoCornerOfRange( _
         ByVal aRange As Range, _
         cornerIndex As Corner) As Range
-    
+
     Select Case cornerIndex
         Case Corner.TOP_LEFT
             Set aoCornerOfRange = _
                     aRange.cells(1, 1)
-            
+
         Case Corner.TOP_RIGHT
             Set aoCornerOfRange = _
                     aRange.cells(1, aRange.Columns.Count)
-            
+
         Case Corner.BOTTOM_LEFT
             Set aoCornerOfRange = _
                     aRange.cells(aRange.rows.Count, 1)
-            
+
         Case Corner.BOTTOM_RIGHT
             Set aoCornerOfRange = _
                     aRange.cells( _
                         aRange.rows.Count, aRange.Columns.Count)
-            
+
         Case Else
             MsgBox ("Unknown corner index " & cornerIndex)
     End Select
@@ -1680,7 +1682,7 @@ Private Function aoCloserToCorner( _
         r2 As Range, _
         cornerIndex As Corner, _
         orientationIndex As Orientation) As Boolean
-    
+
     ' the non-standard Select Case semantics that VB invented are really
     '   inconviniet here.
     Select Case orientationIndex
@@ -1688,38 +1690,38 @@ Private Function aoCloserToCorner( _
             Select Case cornerIndex
                 Case Corner.TOP_LEFT
                     aoCloserToCorner = r1.Row <= r2.Row
-                    
+
                 Case Corner.TOP_RIGHT
                     aoCloserToCorner = r1.Row <= r2.Row
-                    
+
                 Case Corner.BOTTOM_LEFT
                     aoCloserToCorner = r1.Row >= r2.Row
-                    
+
                 Case Corner.BOTTOM_RIGHT
                     aoCloserToCorner = r1.Row >= r2.Row
-                    
+
                 Case Else
                     MsgBox ("Unknown corner index " & cornerIndex)
             End Select
-            
+
         Case Orientation.BY_COLUMN
             Select Case cornerIndex
                 Case Corner.TOP_LEFT
                     aoCloserToCorner = r1.Column <= r2.Column
-                    
+
                 Case Corner.TOP_RIGHT
                     aoCloserToCorner = r1.Column >= r2.Column
-                
+
                 Case Corner.BOTTOM_LEFT
                     aoCloserToCorner = r1.Column <= r2.Column
-                
+
                 Case Corner.BOTTOM_RIGHT
                     aoCloserToCorner = r1.Column >= r2.Column
-                    
+
                 Case Else
                     MsgBox ("Unknown corner index " & cornerIndex)
             End Select
-            
+
         Case Else
             MsgBox ("Unknown orientation index " & orientationIndex)
     End Select
@@ -1742,31 +1744,31 @@ Function aoSortAreas(ByVal rangeToOrder As Variant) As Range
     Dim areaDict As Object, keyIndex As Long, seenRange As Boolean
     Dim oneArea As Range, keys As Variant
     Dim index As Long, prevIndex As Long, r As Range
-    
+
     Set r = aoExtractRange(rangeToOrder)
-    
+
     If r Is Nothing Then
         Exit Function
     ElseIf aoAreasInOrder(r) Then
         Set aoSortAreas = r
         Exit Function
     End If
-    
+
     Set areaDict = CreateObject("Scripting.Dictionary")
-    
+
     For Each oneArea In r.Areas
-        index = 257 * oneArea.Row + oneArea.Column
+        index = 1024 * oneArea.Row + oneArea.Column
         Set areaDict(index) = oneArea
     Next
-    
+
     keys = areaDict.keys
     keys = aoSort(keys)
-    
+
     Dim rb As New AO_RangeBag
     For keyIndex = LBound(keys) To UBound(keys)
         rb.Add areaDict(keys(keyIndex))
     Next
-    
+
     Set aoSortAreas = rb.Flatten
 End Function
 
@@ -1789,19 +1791,19 @@ End Function
 
 Function aoAreasInOrder(r As Range) As Boolean
     Dim prevIndex As Long, index As Long, anArea As Range
-    
+
     prevIndex = -1
     For Each anArea In r.Areas
-        index = 257 * anArea.Row + anArea.Column
-        
+        index = 1024 * anArea.Row + anArea.Column
+
         If prevIndex > index Then
             aoAreasInOrder = False
             Exit Function
         End If
-        
+
         prevIndex = index
     Next
-    
+
     aoAreasInOrder = True
 End Function
 
@@ -1814,12 +1816,12 @@ Private Function aoMergeSort( _
         ByRef list As Variant, _
         asc As Boolean, _
         comparator As String) As Variant
-    
+
     Dim index As Long, sorted As Boolean
     Dim lo As Long, hi As Long
     Dim isOfObject As Boolean, isArr As Boolean
     Dim asArray As Variant, asCollection As Collection
-    
+
     isArr = IsArray(list)
     If isArr Then
         lo = LBound(list)
@@ -1828,7 +1830,7 @@ Private Function aoMergeSort( _
         lo = 1
         hi = list.Count
     End If
-    
+
     If hi - lo <= 0 Then
         If isArr Then
             aoMergeSort = list
@@ -1837,20 +1839,20 @@ Private Function aoMergeSort( _
         End If
         Exit Function
     End If
-    
+
     isOfObject = IsObject(list(lo))
-    
+
     If isArr Then
         asArray = list
     Else
         Set asCollection = list
     End If
-    
+
     'aoMergeSort_ list, lo, hi, asc, comparator
     aoMergeSort_ _
         isOfObject, isArr, asArray, asCollection, _
         lo, hi, asc, comparator
-    
+
     If isArr Then
         aoMergeSort = asArray
     Else
@@ -1867,30 +1869,30 @@ Private Function aoMergeSort_( _
         hi_ As Long, _
         asc As Boolean, _
         comparator As String)
-    
+
     Dim lo As Long, hi As Long, mid As Long, end_lo As Long
     Dim start_hi As Long, k As Long, t As Variant, cmp As Long
-    
+
     lo = lo_
     hi = hi_
-    
+
     If lo >= hi Then
         Exit Function
     End If
-    
-    
+
+
     mid = Int((lo + hi) / 2)
-    
+
     aoMergeSort_ _
         isOfObject, isArr, asArray, asCollection, _
         lo, mid, asc, comparator
     aoMergeSort_ _
         isOfObject, isArr, asArray, asCollection, _
         mid + 1, hi, asc, comparator
-    
+
     end_lo = mid
     start_hi = mid + 1
-    
+
     Do While (lo <= end_lo) And (start_hi <= hi)
         If Len(comparator) = 0 Then
             cmp = aoCompareValues( _
@@ -1905,11 +1907,11 @@ Private Function aoMergeSort_( _
                     aoGetIndex( _
                         start_hi, isOfObject, isArr, asArray, asCollection))
         End If
-        
+
         If Not asc Then
             cmp = -cmp
         End If
-        
+
         If cmp < 0 Then
             lo = lo + 1
         Else
@@ -1921,7 +1923,7 @@ Private Function aoMergeSort_( _
                 t = aoGetIndex( _
                         start_hi, isOfObject, isArr, asArray, asCollection)
             End If
-            
+
             For k = start_hi - 1 To lo Step -1
                 aoAssign (k + 1), _
                         aoGetIndex( _
@@ -1943,7 +1945,7 @@ Private Function aoGetIndex( _
         isArr As Boolean, _
         ByRef asArray As Variant, _
         ByRef asCollection As Collection) As Variant
-    
+
     If isOfObject Then
         If isArr Then
             Set aoGetIndex = asArray(index)
@@ -1968,7 +1970,7 @@ Private Function aoAssign( _
         ByRef asArray As Variant, _
         ByRef asCollection As Collection)
     Dim bugfix As Collection
-    
+
     If isArr Then
         If isOfObject Then
             Set asArray(index) = val
@@ -1996,7 +1998,7 @@ Function aoCompareValues(val1 As Variant, val2 As Variant) As Long
             For index = 1 To WorksheetFunction.Min(Len(val1), Len(val2))
                 c1 = mid(val1, index, 1)
                 c2 = mid(val2, index, 1)
-                
+
                 If c1 Like "#" And c2 Like "#" Then
                     aoCompareValues = _
                         aoCompareByNumberPrefix( _
@@ -2018,7 +2020,7 @@ Function aoCompareValues(val1 As Variant, val2 As Variant) As Long
                 End If
             Next
         End If
-        
+
         If val1 < val2 Then
             aoCompareValues = -1
         ElseIf val1 > val2 Then
@@ -2036,7 +2038,7 @@ Private Function aoCompareByNumberPrefix( _
     For index = 1 To WorksheetFunction.Min(Len(val1), Len(val2))
         c1 = mid(val1, index, 1)
         c2 = mid(val2, index, 1)
-        
+
         If c1 Like "#" And c2 Like "#" Then
             num1 = num1 & c1
             num2 = num2 & c2
@@ -2050,7 +2052,7 @@ Private Function aoCompareByNumberPrefix( _
             Exit For
         End If
     Next
-    
+
     If Len(val1) <> Len(val2) Then
         If Len(val1) > Len(val2) Then
             If mid(val1, index, 1) Like "#" Then
@@ -2149,32 +2151,32 @@ End Function
 
 Private Function aoExtractLowestStairSpan( _
         bounds As Range, minorDirection As Direction) As Range
-    
+
     Dim currentCellIndex As Long
     Dim currentCell As Range, lastNonBlankCell As Range
     Dim currentValue As String, lastNonBlankValue As String
-    
+
     For currentCellIndex = bounds.cells.Count To 1 Step -1
-    
+
         Set currentCell = bounds.cells(currentCellIndex)
         currentValue = Trim(aoCellVal(currentCell))
-        
+
         If currentValue <> "" Then
-        
+
             If lastNonBlankValue = "" Then
                 lastNonBlankValue = currentValue
                 Set lastNonBlankCell = currentCell
-                
+
             ElseIf currentValue = lastNonBlankValue Then
                 Set lastNonBlankCell = currentCell
-                
+
             Else
                 Exit For
             End If
-            
+
         End If
     Next
-    
+
     If lastNonBlankCell Is Nothing Then
         Set aoExtractLowestStairSpan = bounds
     Else
@@ -2196,14 +2198,14 @@ Private Function aoReducingStairValFinder( _
         isVertical As Boolean, _
         minorDirection As Direction, _
         majorDirection As Direction) As String
-    
+
     Dim leastMinorStairSpan As Range
     Dim rowsOrCols As Range
-    
+
     Set rowsOrCols = aoGetRowsOrCols(bounds, Not isVertical)
     Set leastMinorStairSpan = _
             aoExtractLowestStairSpan(rowsOrCols(1), minorDirection)
-    
+
     If rowsOrCols.Count = 1 Then
         aoReducingStairValFinder = _
                 Trim(aoCellVal(leastMinorStairSpan.cells(1, 1)))
@@ -2225,10 +2227,10 @@ Function aoStairVal( _
         ByVal bounds As Variant, _
         aCell As Range, _
         Optional isVertical As Boolean = True) As String
-    
+
     Dim lookIn As Range, lookat As Range
     Dim majorDirection As Direction, minorDirection As Direction
-    
+
     If isVertical Then
         majorDirection = Direction.LEFT_HAND
         minorDirection = Direction.UP
@@ -2236,20 +2238,20 @@ Function aoStairVal( _
         majorDirection = Direction.UP
         minorDirection = Direction.LEFT_HAND
     End If
-    
+
     Set lookIn = aoExtractRange(bounds)
     If lookIn Is Nothing Then
         Exit Function
     Else
         Set lookIn = Union(lookIn, lookIn)
         Set lookat = aoIntersectAsIs(lookIn, aCell)
-        
+
         Debug.Assert Not (lookat Is Nothing)
         Debug.Assert lookat.cells.Count = 1
-        
+
         If lookIn.Areas.Count > 1 Then
             Dim anArea As Range
-            
+
             For Each anArea In lookIn.Areas
                 If Not (Intersect(anArea, lookat) Is Nothing) Then
                     Set lookIn = anArea
@@ -2258,7 +2260,7 @@ Function aoStairVal( _
             Next
         End If
     End If
-    
+
     If Len(aoCellVal(lookat)) = 0 Then
         If isVertical Then
             aoStairVal = _
@@ -2271,7 +2273,7 @@ Function aoStairVal( _
                     lookIn, _
                     aCell.Offset(0, -1), isVertical)
         End If
-        
+
         If Len(aoStairVal) = 0 Then
             aoStairVal = _
                 aoReducingStairValFinder( _
@@ -2281,7 +2283,7 @@ Function aoStairVal( _
     Else
         aoStairVal = aoCellVal(lookat)
     End If
-    
+
     aoStairVal = Trim(aoStairVal)
     aoCachedStairVal lookIn, lookat, isVertical, aoStairVal
 End Function
@@ -2312,7 +2314,7 @@ Private Function aoCachedStairVal( _
         aCell As Range, _
         isVertical As Boolean, _
         Optional val As String) As String
-    
+
     Static cache As Object
     Static cacheMajorSpan As Range
 
@@ -2334,7 +2336,7 @@ Private Function aoCachedStairVal( _
     If majorSpanOfCell Is Nothing Then
         Exit Function
     End If
-    
+
     ' this is really ugly because VB does not support short circuiting
     If aoIsUsable(cacheMajorSpan) Then
         If cacheMajorSpan.Parent.name = majorSpanOfCell.Parent.name Then
@@ -2362,13 +2364,13 @@ Private Function aoCachedStairVal( _
         cache.RemoveAll
     End If
     Set cacheMajorSpan = majorSpanOfCell
-    
+
     If isVertical Then
         minorIndexOfCell = aCell.Column
     Else
         minorIndexOfCell = aCell.Row
     End If
-    
+
     If Len(val) = 0 Then
         If cache.Exists(minorIndexOfCell) Then
             aoCachedStairVal = cache(minorIndexOfCell)
@@ -2384,14 +2386,14 @@ End Function
 '   sometimes not enaugh.
 Public Function aoIsUsable(r As Range) As Boolean
     On Error GoTo error_occured
-    
+
     If r Is Nothing Then
         aoIsUsable = False
     Else
         r.cells(1, 1).Value
         aoIsUsable = True
     End If
-    
+
     Exit Function
 error_occured:
     aoIsUsable = False
@@ -2402,14 +2404,14 @@ End Function
 Public Function aoFillStair( _
         ByVal bounds As Variant, _
         Optional isVertical As Boolean = True) As Boolean
-    
+
     Dim lookIn As Range
     Dim valChanged As Boolean
-    
+
     Set lookIn = aoExtractRange(bounds)
-    
+
     aoClearStairValCache
-    
+
     If lookIn Is Nothing Then
         Exit Function
     ElseIf lookIn.Areas.Count > 1 Then
@@ -2418,35 +2420,35 @@ Public Function aoFillStair( _
         Exit Function
     Else
         Set lookIn = aoIntersectAsIs(lookIn, lookIn.Parent.UsedRange)
-        
+
         If Not (lookIn Is Nothing) Then
             valChanged = aoFillSubStair(lookIn, isVertical)
         End If
     End If
-    
+
     aoClearStairValCache
     aoFillStair = valChanged
 End Function
 
 Private Function aoFillSubStair( _
         bounds As Range, isVertical As Boolean) As Boolean
-    
+
     Dim valChanged As Boolean, subValChanged As Boolean
     Dim rowsOrCols As Range, firstRowOrCol As Range
     Dim aCell As Range, cellIndex As Long, cellVal As String
     Dim firstOfBlankSpan As Range, spanCovered As Range
-    
+
     Set rowsOrCols = aoGetRowsOrCols(bounds, Not isVertical)
     Set firstRowOrCol = rowsOrCols(1)
-    
+
     For cellIndex = firstRowOrCol.cells.Count To 1 Step -1
         Set aCell = firstRowOrCol.cells(cellIndex)
         cellVal = aCell
-        
+
         If (firstOfBlankSpan Is Nothing) And Len(cellVal) = 0 Then
             Set firstOfBlankSpan = aCell
         End If
-        
+
         If Len(cellVal) > 0 Then
             If firstOfBlankSpan Is Nothing Then
                 Set spanCovered = aCell
@@ -2455,7 +2457,7 @@ Private Function aoFillSubStair( _
                 spanCovered.Value = cellVal
                 valChanged = True
             End If
-            
+
             If rowsOrCols.Count > 1 Then
                 If isVertical Then
                     subValChanged = _
@@ -2469,14 +2471,14 @@ Private Function aoFillSubStair( _
                             Intersect(bounds, aoAbove_(spanCovered)), _
                             isVertical)
                 End If
-                
+
                 valChanged = (valChanged Or subValChanged)
             End If
-            
+
             Set firstOfBlankSpan = Nothing
         End If
     Next
-    
+
     aoFillSubStair = valChanged
 End Function
 
@@ -2487,9 +2489,9 @@ Public Function aoUnfillStair( _
         Optional isVertical As Boolean = True)
     Dim lookIn As Range
     Set lookIn = aoExtractRange(bounds)
-    
+
     aoClearStairValCache
-    
+
     If lookIn Is Nothing Then
         Exit Function
     ElseIf lookIn.Areas.Count > 1 Then
@@ -2504,26 +2506,26 @@ Public Function aoUnfillStair( _
             aoUnfillSubStair lookIn, isVertical
         End If
     End If
-    
+
     aoClearStairValCache
 End Function
 
 Private Function aoUnfillSubStair( _
         bounds As Range, isVertical As Boolean)
-    
+
     Dim aCell As Range
     Dim curVal As String, prevVal As String
     Dim spanStart As Range, prevCell As Range
     Dim majorRowsOrCols As Range, isFirstItr As Boolean
-    
+
     Set majorRowsOrCols = aoGetRowsOrCols(bounds, Not isVertical)
-    
+
     isFirstItr = True
     Set spanStart = bounds.cells(1, 1)
-    
+
     For Each aCell In majorRowsOrCols(1).cells
         curVal = aoCellVal(aCell)
-        
+
         If Not isFirstItr Then
             If Len(curVal) > 0 And curVal <> prevVal Then
                 If isVertical Then
@@ -2539,7 +2541,7 @@ Private Function aoUnfillSubStair( _
                             prevCell).Value = ""
                     End If
                 End If
-                
+
                 If majorRowsOrCols.Count > 1 Then
                     If isVertical Then
                         aoUnfillSubStair _
@@ -2557,17 +2559,17 @@ Private Function aoUnfillSubStair( _
                             isVertical
                     End If
                 End If
-                
+
                 Set spanStart = aCell
             End If
         Else
             isFirstItr = False
         End If
-        
+
         prevVal = curVal
         Set prevCell = aCell
     Next
-    
+
     ' XXX: DUPE FROM ABOVE, NEED TO REFACTOR
     If Not (prevCell Is Nothing) Then
         If isVertical Then
@@ -2579,7 +2581,7 @@ Private Function aoUnfillSubStair( _
                 Range(spanStart.Offset(0, 1), prevCell).Value = ""
             End If
         End If
-        
+
         If majorRowsOrCols.Count > 1 Then
             If isVertical Then
                 aoUnfillSubStair _
@@ -2605,25 +2607,25 @@ End Function
 Public Function aoFormatStair( _
         ByVal bounds As Variant, _
         Optional isVertical As Boolean = True)
-    
+
     Dim lookIn As Range, longerRowsOrCols As Range
-    
+
     Set lookIn = aoExtractRange(bounds)
-    
+
     aoClearStairValCache
     If lookIn Is Nothing Then
         Exit Function
     Else
         Set lookIn = aoIntersect(lookIn, lookIn.Parent.UsedRange)
-        
+
         If lookIn Is Nothing Then
             Exit Function
         End If
     End If
-    
+
     lookIn.Borders(xlInsideVertical).LineStyle = xlNone
     lookIn.Borders(xlInsideHorizontal).LineStyle = xlNone
-    
+
     Set longerRowsOrCols = aoGetRowsOrCols(lookIn, Not isVertical)
     If longerRowsOrCols.Count > 1 Then
         aoFormat _
@@ -2632,7 +2634,7 @@ Public Function aoFormatStair( _
                     longerRowsOrCols(longerRowsOrCols.Count - 1)), _
                 interiorColor:=2, forceInterior:=False
     End If
-    
+
     If isVertical Then
         aoFormatStairBordersForPart lookIn, isVertical, _
                 xlEdgeLeft, xlEdgeBottom, Down, RIGHT_HAND
@@ -2640,7 +2642,7 @@ Public Function aoFormatStair( _
         aoFormatStairBordersForPart lookIn, isVertical, _
                 xlEdgeTop, xlEdgeRight, RIGHT_HAND, Down
     End If
-    
+
     aoClearStairValCache
 End Function
 
@@ -2648,25 +2650,25 @@ Private Function aoFormatStairBordersForPart( _
         part As Range, isVertical As Boolean, _
         longBorder As XlBordersIndex, shortBorder As XlBordersIndex, _
         longDirection As Direction, shortDirection As Direction)
-    
+
     Dim partCell As Range, prevPertCell As Range, firstOfSpan As Range
     Dim currVal As String, prevVal As String
     Dim longSpans As Range
-    
+
     Set longSpans = aoGetRowsOrCols(part, Not isVertical)
     Set firstOfSpan = longSpans(1).cells(1, 1)
     prevVal = Trim(aoCellVal(firstOfSpan))
-    
+
     For Each partCell In longSpans(1).cells
         If Len(aoCellVal(partCell)) > 0 Then
             currVal = aoStairVal(part, partCell, isVertical)
         End If
-        
+
         If currVal <> prevVal Then
             If longSpans.Count > 1 Then
                 If prevPertCell.Borders(shortBorder).LineStyle <> _
                         xlContinuous Then
-                    
+
                     Intersect( _
                         aoGetEntireRowsOrCols( _
                             prevPertCell, isVertical), _
@@ -2674,14 +2676,14 @@ Private Function aoFormatStairBordersForPart( _
                         .Borders(shortBorder).LineStyle = xlContinuous
                 End If
             End If
-            
+
             If Len(prevVal) > 0 Then
                 If (isVertical And firstOfSpan.Column > 1) Or _
                         ((Not isVertical) And firstOfSpan.Row > 1) Then
                     Range(firstOfSpan, prevPertCell) _
                         .Borders(longBorder).LineStyle = xlContinuous
                 End If
-                
+
                 If longSpans.Count > 1 Then
                     aoFormatStairBordersForPart _
                             Intersect(part, _
@@ -2695,14 +2697,14 @@ Private Function aoFormatStairBordersForPart( _
                             shortDirection
                 End If
             End If
-            
+
             Set firstOfSpan = partCell
         End If
-        
+
         prevVal = currVal
         Set prevPertCell = partCell
     Next
-    
+
     ' XXX copy from above, need to refactor
     If longSpans.Count > 1 Then
         If prevPertCell.Borders(shortBorder).LineStyle <> _
@@ -2714,14 +2716,14 @@ Private Function aoFormatStairBordersForPart( _
                 .Borders(shortBorder).LineStyle = xlContinuous
         End If
     End If
-    
+
     If Len(prevVal) > 0 Then
         If (isVertical And firstOfSpan.Column > 1) Or _
                 ((Not isVertical) And firstOfSpan.Row > 1) Then
             Range(firstOfSpan, prevPertCell) _
                 .Borders(longBorder).LineStyle = xlContinuous
         End If
-            
+
         If longSpans.Count > 1 Then
             If currVal = prevVal Then
                 aoFormatStairBordersForPart _
@@ -2750,22 +2752,22 @@ Function aoEmptyWorksheet( _
         wb As Workbook, name As String, _
         Optional deleteCells As Boolean = True, _
         Optional positionFirst As Boolean = False) As Worksheet
-    
+
     Dim index As Long, ws As Worksheet, alreadyExists As Boolean
-    
+
     For index = 1 To wb.Sheets.Count
         If UCase(name) = UCase(wb.Sheets(index).name) Then
             alreadyExists = True
             Exit For
         End If
     Next
-    
+
     If alreadyExists Then
         Set ws = wb.Sheets(name)
         If deleteCells Then
             ws.UsedRange.EntireColumn.Delete
             ws.UsedRange.EntireRow.Delete
-            
+
             ws.Activate
             ActiveWindow.FreezePanes = False
         Else
@@ -2779,7 +2781,7 @@ Function aoEmptyWorksheet( _
         End If
         ws.name = name
     End If
-    
+
     Set aoEmptyWorksheet = ws
 End Function
 
@@ -2788,17 +2790,17 @@ Function aoSwapSheets(wsA As Worksheet, wsB As Worksheet)
     If wsA.Parent.name = wsB.Parent.name And wsA.name = wsB.name Then
         Exit Function
     End If
-    
+
     Dim wbA As Workbook, wbB As Workbook
     Dim tempWs As Worksheet
-    
+
     Set wbA = wsA.Parent
     Set wbB = wsB.Parent
-    
+
     Set tempWs = wbB.Sheets.Add(after:=wsB)
     wsB.Move after:=wsA
     wsA.Move before:=tempWs
-    
+
     Dim alertsOn As Boolean
     alertsOn = Application.DisplayAlerts
     Application.DisplayAlerts = False
@@ -2817,7 +2819,7 @@ Function aoSortSheets(wb As Workbook)
         sheetNames(i) = wb.Sheets(i + 1).name
     Next
     sheetNames = aoSort(sheetNames)
-    
+
     For i = 0 To UBound(sheetNames)
         aoSwapSheets wb.Sheets(i + 1), wb.Sheets(sheetNames(i))
     Next
@@ -2837,26 +2839,26 @@ Public Function aoMatch( _
     Dim aSpans As Collection, bSpans As Collection
     Dim rA As Range, rb As Range
     Dim dictA As Object, dictB As Object
-    
+
     aoClearStairValCache
-    
+
     Set rA = aoExtractRange(rangeA)
     Set rb = aoExtractRange(rangeB)
-    
+
     If Not (rA Is Nothing) Then
         Set rA = Intersect(rA, rA.Parent.UsedRange)
     End If
-    
+
     If Not (rb Is Nothing) Then
         Set rb = Intersect(rb, rb.Parent.UsedRange)
     End If
-    
+
     If (rA Is Nothing) Or (rb Is Nothing) Or _
             (by = Orientation.BY_CELL And useStair) Then
         Set aoMatch = New Collection
         Exit Function
     End If
-    
+
     If by = Orientation.BY_ROW Then
         Set aSpans = aoRows(rA)
         Set bSpans = aoRows(rb)
@@ -2866,13 +2868,13 @@ Public Function aoMatch( _
     Else
         Set aSpans = aoCellsAsCollection(rA)
         Set bSpans = aoCellsAsCollection(rb)
-        
+
         If useStair Then
             ' cannot use stair with BY_CELL orientation
             Debug.Assert False
         End If
     End If
-    
+
     If useStair Then
         Set dictA = aoDictOfRangeValueVsRange(aSpans, rA, (by = BY_ROW))
         Set dictB = aoDictOfRangeValueVsRange(bSpans, rb, (by = BY_ROW))
@@ -2880,7 +2882,7 @@ Public Function aoMatch( _
         Set dictA = aoDictOfRangeValueVsRange(aSpans)
         Set dictB = aoDictOfRangeValueVsRange(bSpans)
     End If
-    
+
     Set aoMatch = aoValuesOfMatchingKeys(dictA, dictB, includeEmpty)
     aoClearStairValCache
 End Function
@@ -2888,11 +2890,11 @@ End Function
 Private Function aoCellsAsCollection(r As Range) As Collection
     Dim coll As New Collection
     Dim aCell As Range
-    
+
     For Each aCell In r.cells
         coll.Add aCell
     Next
-    
+
     Set aoCellsAsCollection = coll
 End Function
 
@@ -2903,7 +2905,7 @@ Private Function aoValuesOfMatchingKeys( _
         Optional includeEmpty As Boolean = False _
 ) As Collection
     Dim keyA As Variant, matchingPairs As New Collection
-    
+
     For Each keyA In dictA
         If dictB.Exists(keyA) Then
             matchingPairs.Add aoPair(dictA.Item(keyA), dictB.Item(keyA))
@@ -2911,7 +2913,7 @@ Private Function aoValuesOfMatchingKeys( _
             matchingPairs.Add aoPair(dictA.Item(keyA), Nothing)
         End If
     Next
-    
+
     If includeEmpty Then
         Dim keyB As Variant
         For Each keyB In dictB
@@ -2920,7 +2922,7 @@ Private Function aoValuesOfMatchingKeys( _
             End If
         Next
     End If
-    
+
     Set aoValuesOfMatchingKeys = matchingPairs
 End Function
 
@@ -2934,9 +2936,9 @@ Private Function aoDictOfRangeValueVsRange( _
     Dim rangeDict As Object
     Dim rangeValue As Variant
     Dim oneCell As Range, oneRange As Range
-    
+
     Set rangeDict = CreateObject("Scripting.Dictionary")
-    
+
     For Each oneRange In ranges
         rangeValue = _
             Trim(aoJoinRangeVals( _
@@ -2944,16 +2946,16 @@ Private Function aoDictOfRangeValueVsRange( _
         If IsDate(rangeValue) Then
             rangeValue = Format(CDate(rangeValue), "yyyy-mm-dd")
         End If
-        
+
 '        If rangeDict.Exists(rangeValue) Then
 '            aoSelect rangeDict(rangeValue)
 '        End If
 '        aoSelect oneRange
-        
+
         Set rangeDict(rangeValue) = _
                 aoUnion(rangeDict(rangeValue), oneRange)
     Next
-    
+
     Set aoDictOfRangeValueVsRange = rangeDict
 End Function
 
@@ -2964,21 +2966,21 @@ Function aoJoinRangeVals( _
         ByVal aRange As Variant, _
         Optional ByVal stairBounds As Variant, _
         Optional isStairVertical As Boolean) As String
-    
+
     Dim aCell As Range, useStair As Boolean, stairBoundRange As Range
     Set aRange = aoExtractRange(aRange)
-    
+
     ' grrrr, no short circuiting
     If Not IsMissing(stairBounds) Then
         If Not (stairBounds Is Nothing) Then
             Set stairBoundRange = aoExtractRange(stairBounds)
-            
+
             If Not (stairBoundRange Is Nothing) Then
                 useStair = True
             End If
         End If
     End If
-    
+
     aoJoinRangeVals = ""
     For Each aCell In aRange.cells
         If useStair Then
@@ -3010,28 +3012,28 @@ Public Function aoGroup( _
         Optional clumpDisjointAreas As Boolean = False, _
         Optional useStair As Boolean = False, _
         Optional by As Orientation = Orientation.BY_ROW) As Collection
-    
+
     Dim spans As Collection, aVal As Variant
     Dim groups As New Collection, bounds As Range
-    
+
     aoClearStairValCache
     Set aoGroup = groups
-    
+
     Set bounds = aoExtractRange(groupWhat)
     If bounds Is Nothing Then
         Exit Function
     Else
         Set bounds = Intersect(bounds, bounds.Parent.UsedRange)
-        
+
         If bounds Is Nothing Then
             Exit Function
         End If
     End If
-    
+
     If by = Orientation.BY_CELL Then
         useStair = False
     End If
-    
+
     Select Case by
         Case Orientation.BY_ROW
             Set spans = aoRows(bounds)
@@ -3040,57 +3042,57 @@ Public Function aoGroup( _
         Case Orientation.BY_CELL
             Dim aCell As Range
             Set spans = New Collection
-            
+
             For Each aCell In bounds.cells
                 spans.Add aCell
             Next
-            
+
         Case Else
             Debug.Assert False
     End Select
-    
+
     If by = BY_ROW Then
         Set bounds = bounds.EntireColumn
     Else
         Set bounds = bounds.EntireRow
     End If
-    
+
     If clumpDisjointAreas Then
         Dim dict As Object
-        
+
         If useStair Then
             Set dict = aoDictOfRangeValueVsRange( _
                             spans, bounds, (by = BY_ROW))
         Else
             Set dict = aoDictOfRangeValueVsRange(spans)
         End If
-        
+
         For Each aVal In dict.items
             groups.Add aVal
         Next
     Else
         Dim curVal As String, prevVal As String
         Dim aSpan As Range, aGroup As New AO_RangeBag
-         
+
         prevVal = aoCellValues(spans(1), bounds, useStair, by)
         For Each aSpan In spans
             curVal = aoCellValues(aSpan, bounds, useStair, by)
-            
+
             If prevVal <> curVal Then
                 groups.Add aGroup.Flatten
                 aGroup.clear
-                
+
                 prevVal = curVal
             End If
-            
+
             aGroup.addRange aSpan
         Next
-        
+
         If Not (aGroup.Flatten Is Nothing) Then
             groups.Add aGroup.Flatten
         End If
     End If
-    
+
     aoClearStairValCache
 End Function
 
@@ -3099,7 +3101,7 @@ Private Function aoCellValues( _
         stairBounds As Range, _
         useStair As Boolean, _
         by As Orientation) As String
-    
+
     If useStair Then
         aoCellValues = aoJoinRangeVals(cells, stairBounds, by = BY_ROW)
     Else
@@ -3115,26 +3117,26 @@ End Function
 Function aoPartition( _
         aRange As Variant, _
         Optional byRow As Boolean = True) As Collection
-    
+
     Dim rb As New AO_RangeBag, aSpan As Range, spans As Collection
     Dim lastSeen As String, parts As New Collection
     Dim lookIn As Range
-    
+
     Set aoPartition = parts
-    
+
     Set lookIn = aoExtractRange(aRange)
     If lookIn Is Nothing Then: Exit Function
     Set lookIn = aoIntersect(lookIn, lookIn.Parent)
     If lookIn Is Nothing Then: Exit Function
-    
+
     aoClearStairValCache
-    
+
     If byRow Then
         Set spans = aoRows(lookIn)
     Else
         Set spans = aoCols(lookIn)
     End If
-    
+
     For Each aSpan In spans
         If lastSeen = "" Then
             rb.clear
@@ -3144,7 +3146,7 @@ Function aoPartition( _
         Else
             If lastSeen = aoJoinRangeVals(aSpan) Then
                 parts.Add rb.Flatten
-                
+
                 rb.clear
                 rb.addRange aSpan
             Else
@@ -3152,11 +3154,11 @@ Function aoPartition( _
             End If
         End If
     Next
-    
+
     If Not rb.Flatten Is Nothing Then
         parts.Add rb.Flatten
     End If
-    
+
     aoClearStairValCache
 End Function
 
@@ -3173,25 +3175,25 @@ Function aoFormat( _
         Optional interiorColor As Long = -420, _
         Optional forceInterior As Boolean = False)
     Dim aCell As Range, boundedRange As Range
-    
+
     Set boundedRange = aoIntersect(aRange, aRange.Parent.UsedRange)
     For Each aCell In boundedRange.cells
         If Not (borderIndex = -420 Or borderLineStyle = -420) Then
             If forceBorder Or _
                     aCell.Borders(borderIndex).LineStyle = _
                         xlLineStyleNone Then
-                    
+
                 With aCell.Borders(borderIndex)
                     .ColorIndex = 1
                     .LineStyle = borderLineStyle
-                    
+
                     If borderWeight <> -420 Then
                         .Weight = borderWeight
                     End If
                 End With
             End If
         End If
-        
+
         If interiorColor <> -420 Then
             If forceInterior Or _
                     aCell.Interior.ColorIndex = xlColorIndexNone Then
@@ -3203,10 +3205,10 @@ End Function
 
 Function aoClearFormat(ws As Worksheet)
     aoTrimWs ws
-    
+
     With ws.cells
         .FormatConditions.Delete
-        
+
         .Font.Bold = False
         .Font.Italic = False
         .Font.ColorIndex = 0
@@ -3214,11 +3216,11 @@ Function aoClearFormat(ws As Worksheet)
         .Font.name = "Arial"
         .Interior.ColorIndex = xlColorIndexNone
         .HorizontalAlignment = xlGeneral
-        
+
         .Borders(xlInsideVertical).LineStyle = xlNone
         .Borders(xlInsideHorizontal).LineStyle = xlNone
     End With
-    
+
     ' i have to do this because VBA is an absolutely
     '   terrible languate that sometimes breaks otherwhise
     On Error Resume Next
@@ -3228,7 +3230,7 @@ Function aoClearFormat(ws As Worksheet)
     'ws.Columns.Ungroup
     'ws.Columns.Ungroup
     'ws.Columns.Ungroup
-    
+
     ws.Activate
     ActiveWindow.FreezePanes = False
 End Function
@@ -3240,17 +3242,17 @@ End Function
 '   from being copied over.
 Function aoAppendSheet(srcWs As Worksheet, destWs As Worksheet)
     Dim dst As Range, prevSelect As Range
-    
+
     Set prevSelect = Selection
-    
+
     Set dst = aoBL(destWs).EntireRow.cells(1, 1)
     If dst.Row > 1 Then
         Set dst = dst.Offset(1, 0)
     End If
-    
+
     'srcWs.Outline.ShowLevels RowLevels:=10
-    
-    srcWs.UsedRange.Copy
+
+    srcWs.UsedRange.copy
     dst.PasteSpecial xlPasteValues
     dst.PasteSpecial xlPasteFormats
     
