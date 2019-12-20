@@ -656,7 +656,7 @@ End Function
 ' This function returns the rows as a collection of Range objects,
 '   if a row spans more than one Area then the returned Range objects
 '   will reflect this (unlike the inbuilt version of this function).
-' This function (unlike the inbuilt version) guerantees that the rows (or columns)
+' This function (unlike the inbuilt version) guarantees that the rows (or columns)
 '   returned will be in a top-to-bottom..left-to-right order.
 '
 
@@ -843,6 +843,10 @@ Private Function aoWhitespaceRowsOrCols( _
                         whitespace, _
                         lookIn.Parent.UsedRange), _
                     byRow)
+
+        If rowsOrCols Is Nothing Then
+            Exit Function
+        End If
 
         For Each rowOrColArea In rowsOrCols
             For Each rowOrCol In aoGetRowsOrCols(rowOrColArea, byRow)
@@ -1758,7 +1762,7 @@ Function aoSortAreas(ByVal rangeToOrder As Variant) As Range
     Set areaDict = CreateObject("Scripting.Dictionary")
 
     For Each oneArea In r.Areas
-        index = 1024 * oneArea.Row + oneArea.Column
+        index = 257 * oneArea.Row + oneArea.Column
         Set areaDict(index) = oneArea
     Next
 
