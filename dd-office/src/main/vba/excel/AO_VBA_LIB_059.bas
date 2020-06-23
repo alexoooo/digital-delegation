@@ -1,4 +1,4 @@
-Attribute VB_Name = "AO_VBA_LIB_058"
+Attribute VB_Name = "AO_VBA_LIB_059"
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ''
@@ -359,9 +359,6 @@ Function aoFreezePanes(at As Range) As Boolean
     With at.Parent
         .Activate
 
-        If ActiveWindow.WindowState = xlMinimized Then
-            ActiveWindow.WindowState = xlNormal
-        End If
         ActiveWindow.FreezePanes = False
 
         .cells(1, 1).Select
@@ -656,7 +653,7 @@ End Function
 ' This function returns the rows as a collection of Range objects,
 '   if a row spans more than one Area then the returned Range objects
 '   will reflect this (unlike the inbuilt version of this function).
-' This function (unlike the inbuilt version) guarantees that the rows (or columns)
+' This function (unlike the inbuilt version) guerantees that the rows (or columns)
 '   returned will be in a top-to-bottom..left-to-right order.
 '
 
@@ -843,10 +840,6 @@ Private Function aoWhitespaceRowsOrCols( _
                         whitespace, _
                         lookIn.Parent.UsedRange), _
                     byRow)
-
-        If rowsOrCols Is Nothing Then
-            Exit Function
-        End If
 
         For Each rowOrColArea In rowsOrCols
             For Each rowOrCol In aoGetRowsOrCols(rowOrColArea, byRow)
@@ -1467,7 +1460,7 @@ Private Function aoFindAsIs( _
         Exit Function
     End If
 
-    Set oneMatch = bounds.find(findLike, lookIn:=xlValues)
+    Set oneMatch = bounds.Find(findLike, lookIn:=xlValues)
     If Not (oneMatch Is Nothing) Then
         firstAddress = oneMatch.Address
         Do
@@ -1475,9 +1468,13 @@ Private Function aoFindAsIs( _
 
             ' ugly because VB does not support short circuiting
             If Not IsError(oneMatch.Value) Then
+                'Debug.Print oneMatch.Value
+
                 If oneMatch.Value Like findLike Then
                     rb.addRange oneMatch
                 ElseIf Trim(oneMatch.Value) Like findLike Then
+                    rb.addRange oneMatch
+                ElseIf oneMatch.Text Like findLike Then
                     rb.addRange oneMatch
                 End If
             Else
@@ -1799,7 +1796,7 @@ Function aoAreasInOrder(r As Range) As Boolean
 
     prevIndex = -1
     For Each anArea In r.Areas
-        index = 1024 * anArea.Row + anArea.Column
+        index = 257 * anArea.Row + anArea.Column
 
         If prevIndex > index Then
             aoAreasInOrder = False
@@ -3085,7 +3082,7 @@ Public Function aoGroup( _
 
             If prevVal <> curVal Then
                 groups.Add aGroup.Flatten
-                aGroup.clear
+                aGroup.Clear
 
                 prevVal = curVal
             End If
@@ -3144,7 +3141,7 @@ Function aoPartition( _
 
     For Each aSpan In spans
         If lastSeen = "" Then
-            rb.clear
+            rb.Clear
             rb.addRange aSpan
 
             lastSeen = aoJoinRangeVals(aSpan)
@@ -3152,7 +3149,7 @@ Function aoPartition( _
             If lastSeen = aoJoinRangeVals(aSpan) Then
                 parts.Add rb.Flatten
 
-                rb.clear
+                rb.Clear
                 rb.addRange aSpan
             Else
                 rb.addRange aSpan
@@ -3260,7 +3257,7 @@ Function aoAppendSheet(srcWs As Worksheet, destWs As Worksheet)
     srcWs.UsedRange.copy
     dst.PasteSpecial xlPasteValues
     dst.PasteSpecial xlPasteFormats
-    
+
     aoSelect prevSelect
     'aoTrimWs destWs
 End Function
@@ -3272,18 +3269,18 @@ Public Function aoEnterTotals( _
         ByVal toTotalUp As Range, _
         ByVal enterInto As Range, _
         Optional ByVal by As Orientation = Orientation.AUTOMATIC)
-    
+
     Dim srcSpan As Range
     Dim destSpan As Range, prevCellInSpan As Range, destCell As Range
     Dim backInSpan As Direction, forewardInSpan As Direction
-    
+
     Debug.Assert by <> Orientation.BY_CELL
-    
+
     Set toTotalUp = _
             aoIntersectAsIs(toTotalUp, toTotalUp.Parent.UsedRange)
     Set enterInto = _
             aoIntersectAsIs(enterInto, enterInto.Parent.UsedRange)
-    
+
     If by = Orientation.AUTOMATIC Then
         Debug.Assert _
                 toTotalUp.Areas(1).rows.Count = _
@@ -3291,7 +3288,7 @@ Public Function aoEnterTotals( _
         Debug.Assert _
                 aoRow(toTotalUp, 1).cells.Count <> _
                     aoCol(toTotalUp, 1).cells.Count
-        
+
         If aoCol(toTotalUp, 1).cells.Count < _
                 aoRow(toTotalUp, 1).cells.Count Then
             by = BY_ROW
@@ -3299,7 +3296,7 @@ Public Function aoEnterTotals( _
             by = BY_COLUMN
         End If
     End If
-    
+
     If by = BY_ROW Then
         backInSpan = LEFT_HAND
         forewardInSpan = RIGHT_HAND
@@ -3307,24 +3304,24 @@ Public Function aoEnterTotals( _
         backInSpan = UP
         forewardInSpan = Down
     End If
-    
+
     For Each destSpan In aoRowsOrCols(enterInto, 0, by = BY_ROW)
         Set prevCellInSpan = _
                 aoRelativeRange(destSpan, backInSpan).cells(1, 1)
-        
+
         For Each destCell In destSpan.cells
-            
+
             Set srcSpan = _
                 aoIntersect( _
                     aoRelativeRange(prevCellInSpan, forewardInSpan), _
                     aoRelativeRange(destCell, backInSpan), _
                     toTotalUp)
-            
+
             If Not (srcSpan Is Nothing) Then
-                destCell.Formula = _
+                destCell.formula = _
                         "=SUM(" & Replace(srcSpan.Address, "$", "") & ")"
             End If
-            
+
             Set prevCellInSpan = destCell
         Next
     Next
@@ -3351,36 +3348,36 @@ Function aoEval( _
         ByVal label As String, _
         ByVal expression As String, _
         Optional ByVal by As Orientation = Orientation.BY_ROW)
-    
+
     Dim tokens As Collection
     Dim lblGroup As Range
     Dim lblMap As Object, prevLblMap As Object
     Dim destCell As Range, prevDestCell As Range
     Dim destLblCell As Range, destCellsInGroup As Range
     'dim evalStepDomain as Range, prevEvalStepDomain as Range
-    
+
     Debug.Assert by <> Orientation.BY_CELL
     Debug.Assert by <> Orientation.AUTOMATIC
-    
+
     Set labels = aoIntersect(labels, labels.Parent.UsedRange)
     Set evalInto = aoIntersect(evalInto, evalInto.Parent.UsedRange)
-    
-    
+
+
     Set tokens = aoTokenizeOnAngleBrackets(expression)
     For Each lblGroup In aoPartition(labels, by = BY_ROW)
-        
+
         Set lblMap = aoMapTokenLblsToLblCells(lblGroup, tokens)
         Set destLblCell = aoFind(lblGroup, label)
-        
+
         Debug.Assert Not (destLblCell Is Nothing)
         Debug.Assert destLblCell.Count = 1
-        
+
         Set destCellsInGroup = _
                 aoIntersect( _
                     aoGetEntireRowsOrCols( _
                         destLblCell, by = BY_ROW), _
                     evalInto)
-        
+
         Set prevDestCell = Nothing
         For Each destCell In destCellsInGroup.cells
             aoEvalTokens _
@@ -3393,10 +3390,10 @@ Function aoEval( _
                 destCell, _
                 prevDestCell, _
                 by = BY_ROW
-                
+
             Set prevDestCell = destCell
         Next
-        
+
         Set prevLblMap = lblMap
     Next
 End Function
@@ -3411,26 +3408,26 @@ Private Function aoEvalTokens( _
         destCell As Range, _
         prevDestCell As Range, _
         byRow As Boolean)
-    
+
     Dim out As String, val As String, origFormula As String
     Dim isEvalToken As Boolean
     Dim token As Variant, label As String
-    
-    origFormula = destCell.Formula
+
+    origFormula = destCell.formula
     If InStr(origFormula, "=") = 1 Then
         origFormula = right(origFormula, Len(origFormula) - 1)
     End If
-    
+
     For Each token In tokens
         If isEvalToken Then
-            
+
             If token = "closestBackwardCell" Then
                 If byRow Then
                     out = out & destCell.Offset(0, -1).Address
                 Else
                     out = out & destCell.Offset(-1, 0).Address
                 End If
-                
+
             ElseIf InStr(token, "val:") > 0 Then
                 val = _
                     aoCellVal(Intersect( _
@@ -3438,13 +3435,13 @@ Private Function aoEvalTokens( _
                             lblMap(right(token, Len(token) - 4)), _
                             byRow), _
                         evalStepDomain))
-                
+
                 If IsNumeric(val) Then
                     out = out & val
                 Else
                     out = out & "0"
                 End If
-                
+
             ElseIf InStr(token, "ref:") > 0 Then
                 out = out & _
                         Intersect( _
@@ -3452,7 +3449,7 @@ Private Function aoEvalTokens( _
                                 lblMap(right(token, Len(token) - 4)), _
                                 byRow), _
                             evalStepDomain).Address
-                
+
             ElseIf InStr(token, "prev:") > 0 Then
                 If prevDestCell Is Nothing Then
                     out = out & _
@@ -3462,7 +3459,7 @@ Private Function aoEvalTokens( _
                 Else
                     If token Like "prev:*:*" Then
                         label = mid(token, 6, InStrRev(token, ":") - 6)
-                        
+
                         out = out & _
                                 Intersect( _
                                     aoGetEntireRowsOrCols( _
@@ -3473,10 +3470,10 @@ Private Function aoEvalTokens( _
                         out = out & prevDestCell.Address
                     End If
                 End If
-            
+
             ElseIf token = "currentFormula" Then
                 out = out & origFormula
-                
+
             ElseIf InStr(token, "prevGroup:") > 0 Then
                 If prevLblMap Is Nothing Then
                     out = out & _
@@ -3489,7 +3486,7 @@ Private Function aoEvalTokens( _
                             InStr(token, ":") + 1, _
                             InStrRev(token, ":") - _
                                 (InStr(token, ":") + 1))
-                    
+
                     out = out & _
                             Intersect( _
                                 aoGetEntireRowsOrCols( _
@@ -3498,7 +3495,7 @@ Private Function aoEvalTokens( _
                                     evalStepDomain, Not byRow) _
                             ).Address
                 End If
-                
+
             Else
                 ' unrecognized eval token
                 Debug.Assert False
@@ -3506,73 +3503,74 @@ Private Function aoEvalTokens( _
         Else
             out = out & token
         End If
-        
+
         isEvalToken = Not isEvalToken
     Next
-    
-    destCell.Formula = Replace(out, "$", "")
+
+    destCell.formula = Replace(out, "$", "")
 End Function
 
 Private Function aoMapTokenLblsToLblCells( _
         labelCells As Range, _
         tokens As Collection) As Object
-    
+
     Dim token As Variant
     Dim lblMap As Object
     Dim isEvalToken As Boolean
     Dim label As String, foundLbls As Range
-    
+
     Set lblMap = CreateObject("Scripting.Dictionary")
-    
+
     For Each token In tokens
         If isEvalToken Then
             If InStr(token, "val:") = 1 Or _
                     InStr(token, "ref:") = 1 Or _
                     token Like "prev:*:*" Or _
                     InStr(token, "prevGroup:") = 1 Then
-                
+
                 label = right(token, Len(token) - InStr(token, ":"))
-                
+
                 If InStr(label, ":") > 0 Then
                     label = Left(label, InStr(label, ":") - 1)
                 End If
-                
+
                 If Not (lblMap.Exists(label)) Then
                     Set foundLbls = aoFind(labelCells, label)
-                    
+
                     ' specified label not found
                     ' aoSelect labelCells
                     Debug.Assert Not (foundLbls Is Nothing)
-                    
+
                     Set lblMap(label) = foundLbls
                 End If
             End If
         End If
-        
+
         isEvalToken = Not isEvalToken
     Next
-    
+
     Set aoMapTokenLblsToLblCells = lblMap
 End Function
 
-Private Function aoTokenizeOnAngleBrackets( _
+
+Function aoTokenizeOnAngleBrackets( _
         toParse As String) As Collection
-    
+
     Dim leftBracketToken As Variant
     Dim inTailToken As Boolean
     Dim tokens As New Collection
-    
+
     For Each leftBracketToken In Strings.Split(toParse, "<")
-        
+
         If inTailToken Then
-            
+
             ' missing closing (>) bracket
             Debug.Assert InStr(leftBracketToken, ">") > 0
-            
+
             ' extra closing (>) bracket
             Debug.Assert InStr(leftBracketToken, ">") = _
                             InStrRev(leftBracketToken, ">")
-            
+
             tokens.Add _
                 Left( _
                     leftBracketToken, _
@@ -3586,13 +3584,13 @@ Private Function aoTokenizeOnAngleBrackets( _
             ' closing (>) bracket appears before first
             '   opening (<) bracket. in first (head) token
             Debug.Assert InStr(leftBracketToken, ">") = 0
-            
+
             tokens.Add leftBracketToken
-            
+
             inTailToken = True
         End If
     Next
-    
+
     Set aoTokenizeOnAngleBrackets = tokens
 End Function
 
@@ -3601,11 +3599,11 @@ End Function
 Public Function aoCellVal( _
         aCell As Range, _
         Optional ByVal errorVal As String = "err") As String
-    
+
     On Error GoTo handle_error
-    
+
     aoCellVal = aCell.Value
-    
+
     Exit Function
 handle_error:
     aoCellVal = errorVal
@@ -3613,9 +3611,9 @@ End Function
 
 Public Function aoCDbl(val As String) As Double
     On Error GoTo handle_error
-    
+
     aoCDbl = CDbl(val)
-    
+
     Exit Function
 handle_error:
     aoCDbl = 0
@@ -3633,8 +3631,8 @@ Public Function aoMakeFormulasRelative( _
         lookIn As Variant)
     Dim aCell As Range
     For Each aCell In aoExtractRange(lookIn).cells
-        If InStr(aCell.Formula, "=") = 1 Then
-            aCell.Formula = Replace(aCell.Formula, "$", "")
+        If InStr(aCell.formula, "=") = 1 Then
+            aCell.formula = Replace(aCell.formula, "$", "")
         End If
     Next
 End Function
